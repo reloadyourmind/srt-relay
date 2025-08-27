@@ -16,7 +16,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-Then open `http://<container-ip>:8080`.
+Then open `http://<container-ip>:8080` or `http://atem-relay.local:8080` (mDNS).
 
 ## ATEM Setup
 - Streaming service: Custom
