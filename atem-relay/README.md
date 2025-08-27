@@ -28,8 +28,9 @@ Then open `http://<container-ip>:8080` or `http://atem-relay.local:8080` (mDNS).
 - RTSP URL: `rtsp://<container-ip>:8554/<streamPath>`
 - HLS URL: `http://<container-ip>:8888/<streamPath>/index.m3u8`
 - SRT URL: `srt://<container-ip>:8890?streamid=publish://<streamPath>`
+ - Fixed-latency RTMP (recommended if you must use RTMP): `rtmp://<container-ip>:1935/<streamPath>-fixed`
 
 ## Notes
 - All configs stored in `/etc/atem-relay/config.json` and `/etc/mediamtx/mediamtx.yml` but managed via Web UI.
 - Service binaries: `mediamtx` in `/usr/local/bin` and Node app in `/opt/atem-relay`.
- - Low-latency defaults applied: RTSP over TCP, RTMP GOP cache disabled, reduced buffers, LL-HLS.
+ - Low-latency defaults applied: RTSP over TCP, RTMP GOP cache disabled, reduced buffers, LL-HLS. An internal ffmpeg re-mux publishes `<stream>-fixed` RTMP for steadier latency.

@@ -57,6 +57,7 @@ async function init() {
   document.getElementById('port_rtsp').value = cfg.listen.rtsp;
   document.getElementById('port_srt').value = cfg.listen.srt;
   document.getElementById('port_hls').value = cfg.listen.hls;
+  document.getElementById('fixed_rtmp_enable').checked = !!(cfg.fixedRtmp && cfg.fixedRtmp.enable);
 
   const urls = await loadUrls();
   renderUrls(urls);
@@ -78,7 +79,8 @@ async function init() {
         rtsp: Number(document.getElementById('port_rtsp').value),
         srt: Number(document.getElementById('port_srt').value),
         hls: Number(document.getElementById('port_hls').value),
-      }
+      },
+      fixedRtmp: { enable: document.getElementById('fixed_rtmp_enable').checked }
     };
     const res = await fetch('/api/config', {
       method: 'POST',
