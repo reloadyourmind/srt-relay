@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execSync, spawnSync } = require('child_process');
+const { execSync, spawnSync, spawn } = require('child_process');
 
 const app = express();
 app.use(express.json());
@@ -27,7 +27,8 @@ function loadConfig() {
     const defaults = {
       streamPath: 'atem',
       enable: { rtmp: true, rtsp: true, srt: true, hls: true },
-      listen: { rtmp: 1935, rtsp: 8554, hls: 8888, srt: 8890 }
+      listen: { rtmp: 1935, rtsp: 8554, hls: 8888, srt: 8890 },
+      fixedRtmp: { enable: true }
     };
     saveConfig(defaults);
     return defaults;
@@ -47,6 +48,8 @@ function generateMediamtxConfig(cfg) {
   const lp = cfg.listen || {};
   const lines = [];
   lines.push('logLevel: warn');
+  // Low and constant latency tuning
+  lines.push('readBufferCount: 120');
   if (enableRTMP) lines.push(`rtmp: yes`); else lines.push('rtmp: no');
   if (enableRTSP) lines.push(`rtsp: yes`); else lines.push('rtsp: no');
   if (enableSRT) lines.push(`srt: yes`); else lines.push('srt: no');
@@ -55,11 +58,22 @@ function generateMediamtxConfig(cfg) {
   if (enableRTSP) lines.push(`rtspAddress: :${lp.rtsp || 8554}`);
   if (enableHLS) lines.push(`hlsAddress: :${lp.hls || 8888}`);
   if (enableSRT) lines.push(`srtAddress: :${lp.srt || 8890}`);
+  if (enableRTMP) lines.push('rtmpDisableGopCache: yes');
+  if (enableRTSP) lines.push('rtspProtocols: [tcp]');
+  if (enableHLS) {
+    lines.push('hlsLowLatency: yes');
+    lines.push('hlsPartDuration: 200ms');
+    lines.push('hlsSegmentDuration: 1s');
+    lines.push('hlsSegmentCount: 3');
+  }
   lines.push('');
   lines.push('paths:');
   lines.push(`  ${cfg.streamPath}:`);
   lines.push('    # RTMP/RTSP/SRT publishers (ATEM) will publish to this path');
   lines.push('    # OBS or other players pull from the same path');
+  lines.push('    source: publisher');
+  // Fixed RTMP re-mux output path (published by internal ffmpeg relay)
+  lines.push(`  ${cfg.streamPath}-fixed:`);
   lines.push('    source: publisher');
   return lines.join('\n') + '\n';
 }
@@ -82,6 +96,40 @@ function restartMediamtx() {
       return false;
     }
   }
+}
+
+let relayChild = null;
+function stopRelay() {
+  if (relayChild && !relayChild.killed) {
+    try { relayChild.kill('SIGTERM'); } catch (_) {}
+  }
+  relayChild = null;
+}
+
+function startFixedRtmpRelay(cfg) {
+  stopRelay();
+  if (!cfg.fixedRtmp?.enable) return;
+  const inputUrl = `rtsp://127.0.0.1:${cfg.listen.rtsp}/${cfg.streamPath}`;
+  const outputUrl = `rtmp://127.0.0.1:${cfg.listen.rtmp}/${cfg.streamPath}-fixed`;
+  const args = [
+    '-nostats', '-loglevel', 'error',
+    '-fflags', 'nobuffer',
+    '-flags', 'low_delay',
+    '-rw_timeout', '2000000',
+    '-rtsp_transport', 'tcp',
+    '-i', inputUrl,
+    '-c:v', 'copy', '-c:a', 'copy',
+    '-muxdelay', '0', '-muxpreload', '0',
+    '-flush_packets', '1',
+    '-f', 'flv',
+    '-rtmp_live', 'live',
+    outputUrl
+  ];
+  relayChild = spawn('ffmpeg', args, { stdio: 'ignore' });
+  relayChild.on('exit', (code) => {
+    // simple backoff and restart to keep it running
+    setTimeout(() => startFixedRtmpRelay(loadConfig()), 1000);
+  });
 }
 
 function getLocalIPs() {
@@ -117,10 +165,12 @@ app.post('/api/config', (req, res) => {
     hls: Number(body.listen?.hls ?? 8888),
     srt: Number(body.listen?.srt ?? 8890)
   };
-  const cfg = { streamPath, enable, listen };
+  const fixedRtmp = { enable: !!(body.fixedRtmp?.enable ?? true) };
+  const cfg = { streamPath, enable, listen, fixedRtmp };
   saveConfig(cfg);
   writeMediamtxConfig(cfg);
   restartMediamtx();
+  startFixedRtmpRelay(cfg);
   res.json({ ok: true, cfg });
 });
 
@@ -131,6 +181,7 @@ app.get('/api/obs-urls', (req, res) => {
   const ports = cfg.listen;
   res.json({
     rtmp_publish: `rtmp://${host}:${ports.rtmp}/${stream}`,
+    rtmp_fixed: cfg.fixedRtmp?.enable ? `rtmp://${host}:${ports.rtmp}/${stream}-fixed` : null,
     rtsp_pull: `rtsp://${host}:${ports.rtsp}/${stream}`,
     srt_pull: `srt://${host}:${ports.srt}?streamid=publish://${stream}`,
     hls_pull: `http://${host}:${ports.hls}/${stream}/index.m3u8`
@@ -165,6 +216,7 @@ const PORT = process.env.PORT || 8080;
 ensureDir(CONFIG_DIR);
 const current = loadConfig();
 writeMediamtxConfig(current);
+startFixedRtmpRelay(current);
 app.listen(PORT, () => {
   /* eslint-disable no-console */
   console.log(`atem-relay server listening on :${PORT}`);
