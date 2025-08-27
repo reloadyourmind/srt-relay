@@ -47,6 +47,8 @@ function generateMediamtxConfig(cfg) {
   const lp = cfg.listen || {};
   const lines = [];
   lines.push('logLevel: warn');
+  // Low and constant latency tuning
+  lines.push('readBufferCount: 120');
   if (enableRTMP) lines.push(`rtmp: yes`); else lines.push('rtmp: no');
   if (enableRTSP) lines.push(`rtsp: yes`); else lines.push('rtsp: no');
   if (enableSRT) lines.push(`srt: yes`); else lines.push('srt: no');
@@ -55,6 +57,14 @@ function generateMediamtxConfig(cfg) {
   if (enableRTSP) lines.push(`rtspAddress: :${lp.rtsp || 8554}`);
   if (enableHLS) lines.push(`hlsAddress: :${lp.hls || 8888}`);
   if (enableSRT) lines.push(`srtAddress: :${lp.srt || 8890}`);
+  if (enableRTMP) lines.push('rtmpDisableGopCache: yes');
+  if (enableRTSP) lines.push('rtspProtocols: [tcp]');
+  if (enableHLS) {
+    lines.push('hlsLowLatency: yes');
+    lines.push('hlsPartDuration: 200ms');
+    lines.push('hlsSegmentDuration: 1s');
+    lines.push('hlsSegmentCount: 3');
+  }
   lines.push('');
   lines.push('paths:');
   lines.push(`  ${cfg.streamPath}:`);

@@ -32,3 +32,4 @@ Then open `http://<container-ip>:8080` or `http://atem-relay.local:8080` (mDNS).
 ## Notes
 - All configs stored in `/etc/atem-relay/config.json` and `/etc/mediamtx/mediamtx.yml` but managed via Web UI.
 - Service binaries: `mediamtx` in `/usr/local/bin` and Node app in `/opt/atem-relay`.
+ - Low-latency defaults applied: RTSP over TCP, RTMP GOP cache disabled, reduced buffers, LL-HLS.
