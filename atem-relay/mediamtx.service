@@ -1,0 +1,17 @@
+[Unit]
+Description=MediaMTX (formerly rtsp-simple-server)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mediamtx /etc/mediamtx/mediamtx.yml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+User=root
+Group=root
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,17 @@
+[Unit]
+Description=ATEM Relay Web UI and Config Server
+After=network-online.target mediamtx.service
+Wants=network-online.target
+
+[Service]
+Environment=PORT=8080
+Type=simple
+WorkingDirectory=/opt/atem-relay
+ExecStart=/usr/bin/node /opt/atem-relay/server.js
+Restart=on-failure
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+
