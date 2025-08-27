@@ -1,0 +1,13 @@
+:root { color-scheme: light dark; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+h1 { margin: 0 0 16px; }
+section { background: rgba(127,127,127,0.08); padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+form label { display: block; margin: 8px 0; }
+input[type="text"], input[type="number"] { width: 100%; padding: 8px; }
+button { padding: 10px 16px; cursor: pointer; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap: 12px; }
+.row { display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: 8px; margin: 6px 0; }
+.online { color: #0a0; }
+.offline { color: #a00; }
+

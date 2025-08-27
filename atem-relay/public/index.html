@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATEM Relay</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="data:," />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+</head>
+<body>
+  <div class="container">
+    <h1>ATEM Relay</h1>
+    <section>
+      <h2>Configuration</h2>
+      <form id="cfgForm">
+        <label>Stream Path
+          <input type="text" id="streamPath" minlength="1" maxlength="64" pattern="[A-Za-z0-9_\-]+" required />
+        </label>
+        <div class="grid">
+          <label><input type="checkbox" id="enable_rtmp" checked /> RTMP (ingest)</label>
+          <label><input type="checkbox" id="enable_rtsp" checked /> RTSP</label>
+          <label><input type="checkbox" id="enable_srt" checked /> SRT</label>
+          <label><input type="checkbox" id="enable_hls" checked /> HLS</label>
+        </div>
+        <div class="grid">
+          <label>RTMP Port <input type="number" id="port_rtmp" value="1935" /></label>
+          <label>RTSP Port <input type="number" id="port_rtsp" value="8554" /></label>
+          <label>SRT Port <input type="number" id="port_srt" value="8890" /></label>
+          <label>HLS Port <input type="number" id="port_hls" value="8888" /></label>
+        </div>
+        <button type="submit">Save & Apply</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>OBS / Player URLs</h2>
+      <div id="urls"></div>
+    </section>
+
+    <section>
+      <h2>Status</h2>
+      <div id="status">Checking...</div>
+    </section>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
+
